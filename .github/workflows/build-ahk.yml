@@ -23,8 +23,10 @@ jobs:
           version: v2.0.18
           x64: true
           x86: true
+          x64_suffix: -x64
+          x86_suffix: -x86
           compression: upx
-          in: winToMacRustdesk.ahk
+          in: .
           out: dist
 
       - name: Upload artifacts
