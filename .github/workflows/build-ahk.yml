@@ -29,8 +29,28 @@ jobs:
           in: .
           out: dist
 
+      - name: Capture release timestamp
+        id: release_meta
+        shell: pwsh
+        run: |
+          $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+          "release_tag=ahk-build-$timestamp" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "release_name=AutoHotkey Build $timestamp" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: winToMacRustdesk
           path: dist/*.exe
+
+      - name: Publish release
+        if: github.event_name != 'pull_request'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.release_meta.outputs.release_tag }}
+          name: ${{ steps.release_meta.outputs.release_name }}
+          commit: ${{ github.sha }}
+          generateReleaseNotes: false
+          draft: false
+          prerelease: false
+          artifacts: dist/*.exe
