@@ -45,12 +45,14 @@ jobs:
 
       - name: Publish release
         if: github.event_name != 'pull_request'
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ steps.release_meta.outputs.release_tag }}
+          tag_name: ${{ steps.release_meta.outputs.release_tag }}
           name: ${{ steps.release_meta.outputs.release_name }}
-          commit: ${{ github.sha }}
-          generateReleaseNotes: false
+          target_commitish: ${{ github.sha }}
           draft: false
           prerelease: false
-          artifacts: dist/*.exe
+          make_latest: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.exe
