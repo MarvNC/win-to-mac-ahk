@@ -2,76 +2,33 @@ name: Build AHK v2
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     tags: ["*"]
   pull_request:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build ${{ matrix.arch }}
+    name: Build (AHK v2, x64+x86)
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x64, x86]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install AutoHotkey (prefer v2)
-        shell: pwsh
-        run: |
-          # Try Chocolatey first
-          choco install autohotkey -y --no-progress
+      - name: Build with AutoHotkey Build action (v2)
+        uses: nukdokplex/autohotkey-build@v0.1
+        with:
+          # Use an explicit v2 release tag from the official AutoHotkey repo.
+          # To always get the latest v2 at build time, set this to the latest v2 tag when you update.
+          version: v2.0.18
+          x64: true
+          x86: true
+          compression: upx
+          in: winToMacRustdesk.ahk
+          out: dist
 
-          $v2Base64 = 'C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe'
-          $v2Base32 = 'C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey32.exe'
-
-          if (-not (Test-Path $v2Base64 -PathType Leaf) -or -not (Test-Path $v2Base32 -PathType Leaf)) {
-            Write-Host 'AutoHotkey v2 base not found after choco install. Trying winget...'
-            # Attempt both known IDs (exact match) – ignore failures
-            try { winget install --id AutoHotkeyFoundation.AutoHotkey -e --accept-package-agreements --accept-source-agreements } catch {}
-            try { winget install --id AutoHotkey.AutoHotkey -e --accept-package-agreements --accept-source-agreements } catch {}
-          }
-
-          if (-not (Test-Path $v2Base64 -PathType Leaf) -or -not (Test-Path $v2Base32 -PathType Leaf)) {
-            throw 'AutoHotkey v2 base not found. Ensure AHK v2 is installed so v2 base exes exist at C:\\Program Files\\AutoHotkey\\v2\\.'
-          }
-
-      - name: Compile with Ahk2Exe (AHK v2)
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-
-          $compiler = 'C:\\Program Files\\AutoHotkey\\Compiler\\Ahk2Exe.exe'
-          if (-not (Test-Path $compiler -PathType Leaf)) {
-            throw "Ahk2Exe not found at $compiler"
-          }
-
-          $root = (Get-Location).Path
-          $in = Join-Path $root 'winToMacRustdesk.ahk'
-          if (-not (Test-Path $in -PathType Leaf)) {
-            throw "Input AHK not found: $in"
-          }
-
-          New-Item -ItemType Directory -Force -Path (Join-Path $root 'dist') | Out-Null
-
-          if ('${{ matrix.arch }}' -eq 'x64') {
-            $base = 'C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe'
-            $out = Join-Path $root 'dist/winToMacRustdesk-x64.exe'
-          }
-          else {
-            $base = 'C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey32.exe'
-            $out = Join-Path $root 'dist/winToMacRustdesk-x86.exe'
-          }
-
-          & $compiler /in:$in /out:$out /base:$base /compress 1
-
-          if (-not (Test-Path $out -PathType Leaf)) { throw "Expected output missing: $out" }
-
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: winToMacRustdesk-${{ matrix.arch }}
-          path: dist/winToMacRustdesk-${{ matrix.arch }}.exe
+          name: winToMacRustdesk
+          path: dist/*.exe
