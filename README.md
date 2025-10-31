@@ -4,7 +4,7 @@ This is a simple ahk script that swaps Win/Alt on your local machine so that whe
 
 ## Usage
 
-1. Open the [releases](./releases/latest) page
+1. Open the [releases](https://github.com/MarvNC/win-to-mac-ahk/releases/latest) page
 2. Download the version of the `.exe` file for your machine (probably x64).
 3. Open the exe and use with RustDesk.
 
